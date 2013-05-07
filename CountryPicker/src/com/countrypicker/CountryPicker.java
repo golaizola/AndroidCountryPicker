@@ -86,16 +86,17 @@ public class CountryPicker extends DialogFragment implements
 
 	/**
 	 * Get all countries with code and name from res/raw/countries.json
-	 * 
+	 *
+ 	 * @param fileId
 	 * @return
 	 */
-	private List<Country> getAllCountries() {
+	private List<Country> getAllCountries(int fileId) {
 		if (allCountriesList == null) {
 			try {
 				allCountriesList = new ArrayList<Country>();
 
 				// Read from local file
-				String allCountriesString = readFileAsString(getActivity());
+				String allCountriesString = readFileAsString(getActivity(), fileId);
 				JSONObject jsonObject = new JSONObject(allCountriesString);
 				Iterator<?> keys = jsonObject.keys();
 
@@ -129,13 +130,14 @@ public class CountryPicker extends DialogFragment implements
 	 * Convenient function to read from raw file
 	 * 
 	 * @param context
+	 * @param fileId
 	 * @return
 	 * @throws java.io.IOException
 	 */
-	private static String readFileAsString(Context context)
+	private static String readFileAsString(Context context, int fileId)
 			throws java.io.IOException {
 		InputStream inputStream = context.getResources().openRawResource(
-				R.raw.countries);
+				fileId);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				inputStream));
 		StringBuffer result = new StringBuffer();
@@ -162,6 +164,20 @@ public class CountryPicker extends DialogFragment implements
 	}
 
 	/**
+	 * To support using another country file
+	 * 
+	 * @param fileId
+	 * @return
+	 */
+	public static CountryPicker newInstance(int fileId) {
+		CountryPicker picker = new CountryPicker();
+		Bundle bundle = new Bundle();
+		bundle.putInt("fileId", fileId);
+		picker.setArguments(bundle);
+		return picker;
+	}
+
+	/**
 	 * Create view
 	 */
 	@Override
@@ -169,22 +185,32 @@ public class CountryPicker extends DialogFragment implements
 			Bundle savedInstanceState) {
 		// Inflate view
 		View view = inflater.inflate(R.layout.country_picker, null);
-
-		// Get countries from the json
-		getAllCountries();
-
+		int fileId = R.raw.countries;
+		
 		// Set dialog title if show as dialog
 		Bundle args = getArguments();
 		if (args != null) {
 			String dialogTitle = args.getString("dialogTitle");
-			getDialog().setTitle(dialogTitle);
+			
+			if (dialogTitle != null) {
+				getDialog().setTitle(dialogTitle);
 
-			int width = getResources().getDimensionPixelSize(
-					R.dimen.cp_dialog_width);
-			int height = getResources().getDimensionPixelSize(
-					R.dimen.cp_dialog_height);
-			getDialog().getWindow().setLayout(width, height);
+				int width = getResources().getDimensionPixelSize(
+						R.dimen.cp_dialog_width);
+				int height = getResources().getDimensionPixelSize(
+						R.dimen.cp_dialog_height);
+				getDialog().getWindow().setLayout(width, height);
+			}
+
+			fileId = args.getInt("fileId");
+			if (fileId == 0) {
+				fileId = R.raw.countries;
+			}
 		}
+
+		// Get countries from the json
+		getAllCountries(fileId);
+
 
 		// Get view components
 		searchEditText = (EditText) view
